@@ -51,6 +51,15 @@ bzero(int dev, int bno)
   brelse(bp);
 }
 
+// Zero 8 consecutive blocks
+static void
+bzero_8times(int dev, int bno)
+{
+  for (int i = 0; i < 8; ++i) {
+    bzero(dev, bno+i);
+  }
+}
+
 // Blocks.
 
 // Allocate a zeroed disk block.
@@ -64,7 +73,9 @@ balloc(uint dev)
   for(b = 0; b < sb.size; b += BPB){
     bp = bread(dev, BBLOCK(b, sb));
     for(bi = 0; bi < BPB && b + bi < sb.size; bi++){
+      //give us the bi mod 8 th bit from the right hand side indexed by 0
       m = 1 << (bi % 8);
+      //bits converted to byte
       if((bp->data[bi/8] & m) == 0){  // Is block free?
         bp->data[bi/8] |= m;  // Mark block in use.
         log_write(bp);
@@ -85,15 +96,29 @@ balloc(uint dev)
 uint
 balloc_page(uint dev)
 {
-	return -1;
+  int b, bi;
+  struct buf *bp;
+
+  bp = 0;
+  for(b = 0; b < sb.size; b += BPB){
+    bp = bread(dev, BBLOCK(b, sb));
+    for(bi = 0; bi < BPB && b + bi < sb.size; bi+=8){
+      //give us the bi mod 8 th bit from the right hand side indexed by 0
+//      m = 1 << (bi % 8);
+      //bits converted to byte
+      if((bp->data[bi/8]) == 0){  // Is block free?
+        bp->data[bi/8] = (1<<8) - 1;  // Mark block in use.
+        log_write(bp);
+        brelse(bp);
+        bzero_8times(dev, b + bi);
+        return b + bi;
+      }
+    }
+    brelse(bp);
+  }
+  panic("balloc: out of blocks");
 }
 
-/* Free disk blocks allocated using balloc_page.
- */
-void
-bfree_page(int dev, uint b)
-{
-}
 
 // Free a disk block.
 static void
@@ -113,6 +138,15 @@ bfree(int dev, uint b)
   brelse(bp);
 }
 
+/* Free disk blocks allocated using balloc_page.
+ */
+void
+bfree_page(int dev, uint b)
+{
+  for (int i = 0; i < 8; ++i) {
+    bfree(dev, b+i);
+  }
+}
 // Inodes.
 //
 // An inode describes a single unnamed file.

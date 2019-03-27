@@ -10,6 +10,7 @@
 #include "paging.h"
 #include "fs.h"
 
+
 /* Allocate eight consecutive disk blocks.
  * Save the content of the physical page in the pte
  * to the disk blocks and save the block-id into the
@@ -18,6 +19,18 @@
 void
 swap_page_from_pte(pte_t *pte)
 {
+	uint b = balloc_page(1);
+	uint pa = PTE_ADDR(*pte);
+	//unsure
+	char* v = P2V(pa);
+	write_page_to_disk(1,v,b);
+	//what is this
+	*pte = b | PTE_SWAP;
+	asm volatile(" invlpg %0 ": : "r"(v) );
+
+//	kfree(v);
+
+	//*pte &= !PTE_P Maybe in demand paging ( Marking as invalid )
 }
 
 /* Select a victim and swap the contents to the disk.
@@ -37,7 +50,17 @@ swap_page(pde_t *pgdir)
 void
 map_address(pde_t *pgdir, uint addr)
 {
-	panic("map_address is not implemented");
+//	return;
+    /*
+     * walkpgdir(pg)
+     */
+    pte_t *pte = walkpgdir(pgdir, (void *) addr, 1);
+
+    *pte = V2P( kalloc() );
+
+    char *ans = kalloc();
+    cprintf(ans);
+//	panic("map_address is not implemented");
 }
 
 /* page fault handler */

@@ -44,6 +44,8 @@ binit(void)
 
 //PAGEBREAK!
   // Create linked list of buffers
+
+  //bcache is a cyclic list
   bcache.head.prev = &bcache.head;
   bcache.head.next = &bcache.head;
   for(b = bcache.buf; b < bcache.buf+NBUF; b++){
@@ -98,6 +100,12 @@ bget(uint dev, uint blockno)
 void
 write_page_to_disk(uint dev, char *pg, uint blk)
 {
+    for(int i = 0; i < 8; i++){
+        struct buf* b = bget(dev, blk + i);
+        memmove(b, pg + i* sizeof(*b), sizeof(*b));
+        bwrite(b);
+        brelse(b);
+    }
 }
 
 /* Read 4096 bytes from the eight consecutive
@@ -106,6 +114,12 @@ write_page_to_disk(uint dev, char *pg, uint blk)
 void
 read_page_from_disk(uint dev, char *pg, uint blk)
 {
+    for(int i = 0; i < 8; i++){
+        struct buf* b = bread(dev, blk + i);
+        memmove(pg + i* sizeof(*b), b, sizeof(*b));
+//        bwrite(b);
+        brelse(b);
+    }
 }
 
 // Return a locked buf with the contents of the indicated block.
@@ -133,6 +147,7 @@ bwrite(struct buf *b)
 
 // Release a locked buffer.
 // Move to the head of the MRU list.
+//most recently used list = MRU
 void
 brelse(struct buf *b)
 {

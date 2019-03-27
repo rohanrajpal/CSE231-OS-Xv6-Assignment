@@ -16,6 +16,7 @@
 #include "file.h"
 #include "fcntl.h"
 #include "paging.h"
+//#include "vm.c"
 
 extern int numallocblocks;
 
@@ -465,5 +466,20 @@ sys_swap(void)
   if(argint(0, (int*)&addr) < 0)
     return -1;
   // swap addr
+  /*
+   * get the virtual address
+   * get the pte from that
+   * swap page from pte
+   * free the virtual page
+   *
+   */
+  pde_t *pgdir = myproc()->pgdir;
+//  int virtual = argint(0, (int*)&addr);
+//  char* va;
+//  argptr(0, &va, sizeof(*va));
+
+  pte_t *pte = walkpgdir(pgdir,  (void*) addr, 0);
+  swap_page_from_pte(pte);
+  kfree((void*) addr);
   return 0;
 }

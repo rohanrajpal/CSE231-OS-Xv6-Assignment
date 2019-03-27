@@ -45,10 +45,12 @@ int
 holdingsleep(struct sleeplock *lk)
 {
   int r;
-  
+  //why acquire?
+
   acquire(&lk->lk);
   r = lk->locked;
   release(&lk->lk);
+
   return r;
 }
 
