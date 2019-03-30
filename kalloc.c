@@ -69,7 +69,7 @@ void
 kfree(char *v)
 {
   struct run *r;
-  cprintf("in kfree : v is :%d", (int)v);
+  cprintf("in kfree : v is :%d\n", (int)v);
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP){
     if((uint)v % PGSIZE){
       panic("debug part1");

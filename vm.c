@@ -1,3 +1,4 @@
+//#include <stdlib.h>
 #include "param.h"
 #include "types.h"
 #include "defs.h"
@@ -132,6 +133,8 @@ static struct kmap {
  { (void*)data,     V2P(data),     PHYSTOP,   PTE_W}, // kern data+memory
  { (void*)DEVSPACE, DEVSPACE,      0,         PTE_W}, // more devices
 };
+
+int min(int first, int second);
 
 // Set up kernel part of a page table.
 pde_t*
@@ -317,7 +320,13 @@ freevm(pde_t *pgdir)
   }
   kfree((char*)pgdir);
 }
-
+unsigned long randstate = 1;
+unsigned int
+rand()
+{
+    randstate = randstate * 1664525 + 1013904223;
+    return randstate;
+}
 // Select a page-table entry which is mapped
 // but not accessed. Notice that the user memory
 // is mapped between 0...KERNBASE.
@@ -371,27 +380,64 @@ clearaccessbit(pde_t *pgdir)
                 if((*pte & PTE_P) && (*pte & PTE_U)){
                     if(!(*pte & PTE_SWAP)) {
                         cnt++;
-                        int temp = *pte;
-                        temp &= ~PTE_A;
-
-                        *pte &= ~PTE_A;
-
-                        if((*pte & PTE_A)){
-                            cprintf("pte value is %d\n",*pte);
-                            cprintf("PTE_A value is %d\n",PTE_A);
-                            cprintf("answer is %d\n",*pte & PTE_A);
-
-                            panic("in clraccessbit we don't clear correctly");
-                        }
-                        cprintf(" cnt in clraccessbit is %d\n", cnt);
-                        return;
                     }
                 }
             }
         }
     }
-    cprintf(" cnt in clraccessbit is %d\n", cnt);
-    panic("clearaccessbit: nothing to clear");
+    if(cnt < 1){
+        panic("nothing to clear in clearaccessbit");
+    }
+
+
+    /*
+     * Randomizing numbers
+     */
+    uint toevict[100];
+    if(cnt<10){
+        toevict[0] = rand()%cnt;
+    }
+    else{
+        for (int k = 0; k < min(cnt/10 + 1,100); ++k) {
+            toevict[k] = rand()%10;
+
+        }
+    }
+    int cnt2 = 0;
+    int cnt3 = 0;
+
+
+    for (int i = 0; i < (1 << 10); ++i) {
+        pde_t *pde = &pgdir[i];
+        if(*pde & PTE_P){
+            pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
+            pte_t *pte;
+            for (int j = 0; j < (1 << 10) ; ++j) {
+                pte = &pgtab[j];
+                if((*pte & PTE_P) && (*pte & PTE_U)){
+                    if(!(*pte & PTE_SWAP)) {
+                        cnt2++;
+                        if(cnt2 > toevict[cnt3]) {
+                            cnt3++;
+                            cnt2 = 0;
+                            *pte &= ~PTE_A;
+//                            cprintf(" cnt in clraccessbit is %d\n", cnt);
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(cnt3 == 0){
+        panic("didn't clear anythiing in clear access bit");
+    }
+}
+
+int min(int first, int second) {
+    if(first<second)
+        return first;
+    return second;
 }
 
 // return the disk block-id, if the virtual address

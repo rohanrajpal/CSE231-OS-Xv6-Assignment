@@ -108,6 +108,10 @@ map_address(pde_t *pgdir, uint addr)
         bfree_page(1,bid);
         end_op();
     }
+    if (walkpgdir(pgdir, ( void *) addr, 0) == 0 ){
+        panic("mapping unsuccessfull\n");
+    }
+
     cprintf("Completed map_address for address %d\n",addr);
 //    *pte = V2P( kalloc() ) | PTE_P | PTE_U | PTE_W;
 //	select_a_victim(pgdir);
