@@ -124,7 +124,7 @@ map_address(pde_t *pgdir, uint addr)
         panic("mapping unsuccessfull\n");
     }
 
-    cprintf("Completed map_address for address %d\n",addr);
+//    cprintf("Completed map_address for address %d\n",addr);
 //    *pte = V2P( kalloc() ) | PTE_P | PTE_U | PTE_W;
 //	select_a_victim(pgdir);
 

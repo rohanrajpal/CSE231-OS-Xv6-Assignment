@@ -10,7 +10,7 @@
 #include "paging.h"
 #include "fs.h"
 //#include "vm.h"
-
+extern int numallocblocks;
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
@@ -290,6 +290,14 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
     pte = walkpgdir(pgdir, (char*)a, 0);
     if(!pte)
       a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
+    else if(*pte & PTE_SWAP){
+        uint bid = (*pte)>>12;
+        begin_op();
+        bfree_page(1, bid);
+        end_op();
+        *pte = 0;
+        numallocblocks--;
+    }
     else if((*pte & PTE_P) != 0){
       pa = PTE_ADDR(*pte);
       if(pa == 0)
