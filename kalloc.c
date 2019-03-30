@@ -69,17 +69,19 @@ void
 kfree(char *v)
 {
   struct run *r;
-  cprintf("in kfree : v is :%d\n", (int)v);
+//  cprintf("in kfree : v is :%d\n", (int)v);
+//  cprintf("kfree: have to free %d\n",(uint ) v);
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP){
     if((uint)v % PGSIZE){
       panic("debug part1");
     }
+      if(v < end){
+          panic("debug part2");
+      }
     if(V2P(v) >= PHYSTOP){
         panic("debug part3");
     }
-    if(v < end){
-      panic("debug part2");
-    }
+
 
     panic("kfree");
   }

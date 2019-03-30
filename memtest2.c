@@ -39,21 +39,25 @@ mem(void)
 		m1 = m2;
 		cur += 4096;
 	}
+	printf(1, "total memory allocated\n");
+
 	((int*)m1)[2] = count;
 	total_count = count;
 
 	count = 0;
 	m1 = start;
 
+	printf(1,"starting the while loop\n");
 	while (count != total_count) {
 		if (((int*)m1)[2] != count)
 			goto failed;
 		m1 = *(char**)m1;
 		count++;
 	}
-
+    printf(1,"while loop done\n");
 	if (swap(start) != 0)
 		printf(1, "failed to swap %p\n", start);
+    printf(1,"swap syscall done\n");
 
 	pid = fork();
 

@@ -479,7 +479,16 @@ sys_swap(void)
 //  argptr(0, &va, sizeof(*va));
 //  error implicit delaration
   pte_t *pte = walkpgdir(pgdir,  (void*) addr, 0);
+//  cprintf("sys_swap: pte is %d\n",pte);
+//  if(*pte &PTE_SWAP){
+//      panic("already swapped");
+//  }
+  begin_op();
+//  cprintf("sysswap: begin swap_page_from_pte\n");
   swap_page_from_pte(pte);
-  kfree((void*) addr);
+//  cprintf("sysswap: done swap_page_from_pte\n");
+  end_op();
+//  cprintf("addres to free is: %d \n",addr);
+//  kfree((char *) addr);
   return 0;
 }

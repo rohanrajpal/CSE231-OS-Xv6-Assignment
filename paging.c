@@ -31,10 +31,7 @@ swap_page_from_pte(pte_t *pte)
 	//unsure
 	char* v = (char * ) P2V(pa);
 //    unsigned v = P2V(pa);
-    if((int) v == -2147483648){
-        cprintf("in swap page form pte pa is %d and pte is %d\n", pa, pte);
-    }
-    cprintf("value of v :%d before write_page_to in swap page \n", (int)v);
+//    cprintf("value of v :%d before write_page_to in swap page \n", (int)v);
 
 //    cprintf("calling write_page_to_disk page from swap_page_from_pte\n");
 	write_page_to_disk(1,v,b);
@@ -96,14 +93,14 @@ map_address(pde_t *pgdir, uint addr)
             break;
         }
         swapcnt++;
-        cprintf("start swap page mapaddress %d\n",swapcnt);
+//        cprintf("start swap page mapaddress %d\n",swapcnt);
         swap_page(pgdir);
-        cprintf("fin swap page mapaddress %d\n",swapcnt);
+//        cprintf("fin swap page mapaddress %d\n",swapcnt);
         allocmem=kalloc();
     }
     if (bid != -1){
         read_page_from_disk(1,allocmem,bid);
-        cprintf("bfree called from map_address on bid %d\n", bid);
+//        cprintf("bfree called from map_address on bid %d\n", bid);
         begin_op();
         bfree_page(1,bid);
         end_op();

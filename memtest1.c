@@ -12,8 +12,8 @@ char buf[8192];
 char name[3];
 char *echoargv[] = { "echo", "ALL", "TESTS", "PASSED", 0 };
 int stdout = 1;
-//#define TOTAL_MEMORY (2 << 20) + (1 << 18) + (1 << 17)
-#define TOTAL_MEMORY (2 << 20) + (1 << 18)+ (1 << 17)
+#define TOTAL_MEMORY (2 << 20) + (1 << 18) + (1 << 17)
+
 void
 mem(void)
 {
@@ -28,10 +28,9 @@ mem(void)
     if (m1 == 0)
         goto failed;
     start = m1;
-    printf(1, "m1 allocated\n");
+
     while (cur < TOTAL_MEMORY) {
         m2 = malloc(4096);
-
         if (m2 == 0)
             goto failed;
         *(char**)m1 = m2;
@@ -39,7 +38,6 @@ mem(void)
         m1 = m2;
         cur += 4096;
     }
-    printf(1, "total memory allocated\n");
     ((int*)m1)[2] = count;
     total_count = count;
 
