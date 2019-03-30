@@ -11,6 +11,8 @@
 #include "paging.h"
 #include "fs.h"
 #include "vm.h"
+
+extern int numallocblocks;
 //#include "user.h"
 /* Allocate eight consecutive disk blocks.
  * Save the content of the physical page in the pte
@@ -18,6 +20,17 @@
  * pte.
  */
 //int balloccallcnt=0;
+char* kalloc_swap(pde_t *pgdir){
+    while (1){
+        char* v = kalloc();
+        if (!(v==0)){
+//            cprintf("returning from kalloc_swap\n");
+            return v;
+        }
+        swap_page(pgdir);
+//        swap_page(pgdir);
+    }
+}
 
 void
 swap_page_from_pte(pte_t *pte)
@@ -25,6 +38,7 @@ swap_page_from_pte(pte_t *pte)
 //    panic("reached swap_page_from_pte");
 //    cprintf("calling balloc page from swap_page_from_pte\n");
 	uint b = balloc_page(1);
+
 //    cprintf("executed balloc page correctly from swap_page_from_pte\n");
 
     uint pa = PTE_ADDR(*pte);
@@ -32,14 +46,14 @@ swap_page_from_pte(pte_t *pte)
 	char* v = (char * ) P2V(pa);
 //    unsigned v = P2V(pa);
 //    cprintf("value of v :%d before write_page_to in swap page \n", (int)v);
-
+    numallocblocks++;
 //    cprintf("calling write_page_to_disk page from swap_page_from_pte\n");
 	write_page_to_disk(1,v,b);
 //    cprintf("done write_page_to_disk page from swap_page_from_pte\n");
 
     //what is this
 	//maximum block size is FSSIZE
-	*pte = (b<<12) | PTE_SWAP;
+	*pte = (b<<12) | PTE_SWAP ;
 //    unsigned long tosend =0;
     //cprintf("value of v :%d before we asm volatile in swap page ", (int)v);
 	asm volatile("invlpg (%0)":: "r"( (unsigned long) v) : "memory");
@@ -103,6 +117,7 @@ map_address(pde_t *pgdir, uint addr)
 //        cprintf("bfree called from map_address on bid %d\n", bid);
         begin_op();
         bfree_page(1,bid);
+        numallocblocks--;
         end_op();
     }
     if (walkpgdir(pgdir, ( void *) addr, 0) == 0 ){
@@ -131,3 +146,4 @@ handle_pgfault()
 	addr &= ~0xfff;
 	map_address(curproc->pgdir, addr);
 }
+

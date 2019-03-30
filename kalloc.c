@@ -105,7 +105,7 @@ kfree(char *v)
 char*
 kalloc(void)
 {
-  struct run *r;
+  volatile struct run *r;
 
   if(kmem.use_lock)
     acquire(&kmem.lock);
@@ -116,4 +116,5 @@ kalloc(void)
     release(&kmem.lock);
   return (char*)r;
 }
+
 

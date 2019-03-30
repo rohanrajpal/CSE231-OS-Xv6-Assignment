@@ -187,6 +187,7 @@ fork(void)
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
+    cprintf("returning -1 from fork()");
     return -1;
   }
   np->sz = curproc->sz;

@@ -8,5 +8,5 @@ int swap_page(pde_t *pgdir);
 void swap_page_from_pte(pte_t *pte);
 void map_address(pde_t *pgdir, uint addr);
 pte_t *uva2pte(pde_t *pgdir, uint uva);
-
+char* kalloc_swap(pde_t *pgdir);
 #endif

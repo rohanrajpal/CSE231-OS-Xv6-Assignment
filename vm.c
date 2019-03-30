@@ -333,11 +333,7 @@ rand()
 pte_t*
 select_a_victim(pde_t *pgdir)
 {
-    /*
-     * TODO: Maybe we need to check for already swapped
-     * TODO: Convert to recursive later
-     *
-     */
+
     while (1){
         for (int i = 0; i < (1 << 10); ++i) {
             pde_t *pde = &pgdir[i];
@@ -486,12 +482,24 @@ copyuvm(pde_t *pgdir, uint sz)
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
+    /*
+     * Maybe the below line will be in a while loop
+     */
+    if (*pte & PTE_SWAP){
+        map_address(pgdir,i);
+//        cprintf("it is swapped as well");
+        pte = walkpgdir(pgdir, (void *) i, 0);
+    }
     if(!(*pte & PTE_P))
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto bad;
+
+    if((mem = kalloc_swap(pgdir)) == 0){
+
+        goto bad;
+    }
+//    cprintf("copyuvm: i is: %d\n",i);
 
     memmove(mem, (char*)P2V(pa), PGSIZE);
     if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0)
