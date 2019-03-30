@@ -16,7 +16,7 @@
 #include "file.h"
 #include "fcntl.h"
 #include "paging.h"
-//#include "vm.c"
+#include "vm.h"
 
 extern int numallocblocks;
 
@@ -477,7 +477,7 @@ sys_swap(void)
 //  int virtual = argint(0, (int*)&addr);
 //  char* va;
 //  argptr(0, &va, sizeof(*va));
-
+//  error implicit delaration
   pte_t *pte = walkpgdir(pgdir,  (void*) addr, 0);
   swap_page_from_pte(pte);
   kfree((void*) addr);

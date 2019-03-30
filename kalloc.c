@@ -2,6 +2,15 @@
 // memory for user processes, kernel stacks, page table pages,
 // and pipe buffers. Allocates 4096-byte pages.
 
+//#include <execinfo.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+
+
+//#include <execinfo.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+
 #include "types.h"
 #include "defs.h"
 #include "param.h"
@@ -61,8 +70,10 @@ kfree(char *v)
 {
   struct run *r;
 
-  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP){
     panic("kfree");
+  }
+
 
   // Fill with junk to catch dangling refs.
   memset(v, 1, PGSIZE);

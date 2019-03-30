@@ -102,7 +102,18 @@ write_page_to_disk(uint dev, char *pg, uint blk)
 {
     for(int i = 0; i < 8; i++){
         struct buf* b = bget(dev, blk + i);
-        memmove(b, pg + i* sizeof(*b), sizeof(*b));
+//        struct buf* b_copy = b;
+        if(!holdingsleep(&b->lock))
+        {
+          panic("write page to disk before memmove");
+        }
+        memmove(b->data, pg + i* sizeof(*b), sizeof(*b));
+
+        if(!holdingsleep(&b->lock))
+        {
+          panic("write page to disk after memmove");
+        }
+
         bwrite(b);
         brelse(b);
     }

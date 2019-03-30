@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "types.h"
 #include "defs.h"
 #include "param.h"
@@ -9,8 +10,8 @@
 #include "spinlock.h"
 #include "paging.h"
 #include "fs.h"
-
-
+#include "vm.h"
+//#include "user.h"
 /* Allocate eight consecutive disk blocks.
  * Save the content of the physical page in the pte
  * to the disk blocks and save the block-id into the
@@ -19,16 +20,20 @@
 void
 swap_page_from_pte(pte_t *pte)
 {
+//    panic("reached swap_page_from_pte");
 	uint b = balloc_page(1);
 	uint pa = PTE_ADDR(*pte);
 	//unsure
 	char* v = P2V(pa);
+//    unsigned v = P2V(pa);
 	write_page_to_disk(1,v,b);
 	//what is this
-	*pte = b | PTE_SWAP;
-	asm volatile(" invlpg %0 ": : "r"(v) );
+	//maximum block size is FSSIZE
+	*pte = (b<<12) | PTE_SWAP;
+//    unsigned long tosend =0;
+	asm volatile("invlpg (%0)":: "r"( (unsigned long) v) : "memory");
 
-//	kfree(v);
+	kfree(v);
 
 	//*pte &= !PTE_P Maybe in demand paging ( Marking as invalid )
 }
@@ -38,7 +43,12 @@ swap_page_from_pte(pte_t *pte)
 int
 swap_page(pde_t *pgdir)
 {
-	panic("swap_page is not implemented");
+    pte_t *victim = select_a_victim(pgdir);
+    begin_op();
+    swap_page_from_pte(victim);
+    end_op();
+//    syscall();
+//	panic("swap_page is not implemented");
 	return 1;
 }
 
@@ -55,11 +65,32 @@ map_address(pde_t *pgdir, uint addr)
      * walkpgdir(pg)
      */
     pte_t *pte = walkpgdir(pgdir, (void *) addr, 1);
+    int bid =-1;
+    if (*pte & PTE_SWAP){
+        bid = getswappedblk(pgdir,addr);
+        if(bid == -1){
+            panic("panic in mapaddress bid is -1");
+        }
+    }
+    char* allocmem = kalloc();
 
-    *pte = V2P( kalloc() );
+    while(1){
+        if(allocmem) {
+            *pte = V2P(allocmem) | PTE_P | PTE_U | PTE_W;
+            break;
+        }
+        swap_page(pgdir);
+        allocmem=kalloc();
+    }
+    if (bid != -1){
+        read_page_from_disk(1,allocmem,bid);
+        bfree_page(1,bid);
+    }
+//    *pte = V2P( kalloc() ) | PTE_P | PTE_U | PTE_W;
+//	select_a_victim(pgdir);
 
-    char *ans = kalloc();
-    cprintf(ans);
+//    char *ans = kalloc();
+//    cprintf(ans);
 //	panic("map_address is not implemented");
 }
 

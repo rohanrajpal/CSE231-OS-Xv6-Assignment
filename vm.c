@@ -8,6 +8,7 @@
 #include "elf.h"
 #include "paging.h"
 #include "fs.h"
+//#include "vm.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
@@ -34,7 +35,7 @@ seginit(void)
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
-static pte_t *
+pte_t *
 walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
@@ -59,7 +60,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
-static int
+int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
   char *a, *last;
@@ -307,13 +308,66 @@ freevm(pde_t *pgdir)
 pte_t*
 select_a_victim(pde_t *pgdir)
 {
-	return 0;
+    /*
+     * TODO: Maybe we need to check for already swapped
+     */
+    for (int i = 0; i < (1 << 10); ++i) {
+        pde_t *pde = &pgdir[i];
+        if(*pde & PTE_P){
+            pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
+            pte_t *pte;
+            for (int j = 0; j < (1 << 10) ; ++j) {
+                pte = &pgtab[j];
+                if(*pte & PTE_P){
+                    if(!(*pte & PTE_A)){
+//                        cprintf("Reached");
+                        return pte;
+                    }
+                }
+
+            }
+        }
+    }
+
+    clearaccessbit(pgdir);
+
+    for (int i = 0; i < (1 << 10); ++i) {
+        pde_t *pde = &pgdir[i];
+        if(*pde & PTE_P){
+            pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
+            pte_t *pte;
+            for (int j = 0; j < (1 << 10) ; ++j) {
+                pte = &pgtab[j];
+                if(*pte & PTE_P){
+                    if(!(*pte & PTE_A)){
+                        return pte;
+                    }
+                }
+
+            }
+        }
+    }
+    return 0;
 }
 
 // Clear access bit of a random pte.
 void
 clearaccessbit(pde_t *pgdir)
 {
+    for (int i = 0; i < (1 << 10); ++i) {
+        pde_t *pde = &pgdir[i];
+        if(*pde & PTE_P){
+            pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
+            pte_t *pte;
+            for (int j = 0; j < (1 << 10) ; ++j) {
+                pte = &pgtab[j];
+                if(*pte & PTE_P){
+                    *pte  = *pte & !PTE_A;
+                    return;
+                }
+            }
+        }
+    }
 }
 
 // return the disk block-id, if the virtual address
@@ -321,7 +375,15 @@ clearaccessbit(pde_t *pgdir)
 int
 getswappedblk(pde_t *pgdir, uint va)
 {
-  return -1;
+    pde_t *pde = &pgdir[PDX(va)];
+    pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
+    pte_t *pte = &pgtab[PTX(va)];
+
+    if(*pte & PTE_SWAP){
+        int blkid = (*pte)>>12;
+        return blkid;
+    }
+    return -1;
 }
 
 // Clear PTE_U on a page. Used to create an inaccessible
