@@ -56,9 +56,9 @@ static void
 bzero_8times(int dev, int bno)
 {
   for (int i = 0; i < 8; ++i) {
-      cprintf("bzero start at %d\n",bno+i);
+//      cprintf("bzero start at %d\n",bno+i);
       bzero(dev, bno+i);
-      cprintf("bzero completed %d\n",bno+i);
+//      cprintf("bzero completed %d\n",bno+i);
   }
 }
 

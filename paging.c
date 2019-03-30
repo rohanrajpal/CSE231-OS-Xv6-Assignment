@@ -23,19 +23,22 @@ void
 swap_page_from_pte(pte_t *pte)
 {
 //    panic("reached swap_page_from_pte");
-    cprintf("calling balloc page from swap_page_from_pte\n");
+//    cprintf("calling balloc page from swap_page_from_pte\n");
 	uint b = balloc_page(1);
-    cprintf("executed balloc page correctly from swap_page_from_pte\n");
+//    cprintf("executed balloc page correctly from swap_page_from_pte\n");
 
     uint pa = PTE_ADDR(*pte);
 	//unsure
-	char* v = (char *) P2V(pa);
+	char* v = (char * ) P2V(pa);
 //    unsigned v = P2V(pa);
-    cprintf("value of v :%d before write_page_to in swap page ", (int)v);
+    if((int) v == -2147483648){
+        cprintf("in swap page form pte pa is %d and pte is %d\n", pa, pte);
+    }
+    cprintf("value of v :%d before write_page_to in swap page \n", (int)v);
 
-    cprintf("calling write_page_to_disk page from swap_page_from_pte\n");
+//    cprintf("calling write_page_to_disk page from swap_page_from_pte\n");
 	write_page_to_disk(1,v,b);
-    cprintf("done write_page_to_disk page from swap_page_from_pte\n");
+//    cprintf("done write_page_to_disk page from swap_page_from_pte\n");
 
     //what is this
 	//maximum block size is FSSIZE
@@ -100,8 +103,12 @@ map_address(pde_t *pgdir, uint addr)
     }
     if (bid != -1){
         read_page_from_disk(1,allocmem,bid);
+        cprintf("bfree called from map_address on bid %d\n", bid);
+        begin_op();
         bfree_page(1,bid);
+        end_op();
     }
+    cprintf("Completed map_address for address %d\n",addr);
 //    *pte = V2P( kalloc() ) | PTE_P | PTE_U | PTE_W;
 //	select_a_victim(pgdir);
 

@@ -50,7 +50,7 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
             swap_page(pgdir);
       }
       else {
-          cprintf("in walkpgdir: without alloc");
+//          cprintf("in walkpgdir: without alloc");
           return 0;
       }
     // Make sure all those PTE_P bits are zero.
@@ -72,6 +72,9 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
+    if(pa == 0){
+        cprintf("pa is zero in mappages\n");
+    }
   char *a, *last;
   pte_t *pte;
 
@@ -86,8 +89,12 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
     if(a == last)
       break;
     a += PGSIZE;
+      if(pa == 0){
+          cprintf("pa is 0 in mappages and pte is %d\n",pte);
+      }
     pa += PGSIZE;
   }
+
   return 0;
 }
 
@@ -319,47 +326,29 @@ select_a_victim(pde_t *pgdir)
 {
     /*
      * TODO: Maybe we need to check for already swapped
-     */
-    for (int i = 0; i < (1 << 10); ++i) {
-        pde_t *pde = &pgdir[i];
-        if(*pde & PTE_P){
-            pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
-            pte_t *pte;
-            for (int j = 0; j < (1 << 10) ; ++j) {
-                pte = &pgtab[j];
-                if(*pte & PTE_P){
-                    if( ! (*pte & PTE_A)){
-//                        cprintf("Reached");
-                        return pte;
-                    }
-                }
-
-            }
-        }
-    }
-
-    clearaccessbit(pgdir);
-
-    /*
      * TODO: Convert to recursive later
      *
      */
-
-    for (int i = 0; i < (1 << 10); ++i) {
-        pde_t *pde = &pgdir[i];
-        if(*pde & PTE_P){
-            pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
-            pte_t *pte;
-            for (int j = 0; j < (1 << 10) ; ++j) {
-                pte = &pgtab[j];
-                if(*pte & PTE_P){
-                    if(!(*pte & PTE_A)){
-                        return pte;
+    while (1){
+        for (int i = 0; i < (1 << 10); ++i) {
+            pde_t *pde = &pgdir[i];
+            if(*pde & PTE_P){
+                pte_t *pgtab = (pte_t*) P2V(PTE_ADDR(*pde));
+                pte_t *pte;
+                for (int j = 0; j < (1 << 10) ; ++j) {
+                    pte = &pgtab[j];
+                    if((*pte & PTE_P) && !(*pte & PTE_SWAP)&& (*pte & PTE_U)){
+                        if(!(*pte & PTE_A)){
+                            return pte;
+                        }
                     }
                 }
             }
         }
+        clearaccessbit(pgdir);
+
     }
+
     /*
      * If it reaches here, means somebody is occupying what
      * we just freed, means do a recursive call
@@ -371,6 +360,7 @@ select_a_victim(pde_t *pgdir)
 void
 clearaccessbit(pde_t *pgdir)
 {
+    int cnt = 0;
     for (int i = 0; i < (1 << 10); ++i) {
         pde_t *pde = &pgdir[i];
         if(*pde & PTE_P){
@@ -378,13 +368,30 @@ clearaccessbit(pde_t *pgdir)
             pte_t *pte;
             for (int j = 0; j < (1 << 10) ; ++j) {
                 pte = &pgtab[j];
-                if(*pte & PTE_P){
-                    *pte  = *pte & !PTE_A;
-                    return;
+                if((*pte & PTE_P) && (*pte & PTE_U)){
+                    if(!(*pte & PTE_SWAP)) {
+                        cnt++;
+                        int temp = *pte;
+                        temp &= ~PTE_A;
+
+                        *pte &= ~PTE_A;
+
+                        if((*pte & PTE_A)){
+                            cprintf("pte value is %d\n",*pte);
+                            cprintf("PTE_A value is %d\n",PTE_A);
+                            cprintf("answer is %d\n",*pte & PTE_A);
+
+                            panic("in clraccessbit we don't clear correctly");
+                        }
+                        cprintf(" cnt in clraccessbit is %d\n", cnt);
+                        return;
+                    }
                 }
             }
         }
     }
+    cprintf(" cnt in clraccessbit is %d\n", cnt);
+    panic("clearaccessbit: nothing to clear");
 }
 
 // return the disk block-id, if the virtual address
@@ -414,6 +421,7 @@ clearpteu(pde_t *pgdir, char *uva)
   if(pte == 0)
     panic("clearpteu");
   *pte &= ~PTE_U;
+//  cprintf("check after");
 }
 
 // Given a parent process's page table, create a copy
