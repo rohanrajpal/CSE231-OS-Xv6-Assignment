@@ -73,9 +73,9 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 int
 mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 {
-    if(pa == 0){
-        cprintf("pa is zero in mappages\n");
-    }
+//    if(pa == 0){
+//        cprintf("pa is zero in mappages\n");
+//    }
   char *a, *last;
   pte_t *pte;
 
@@ -90,9 +90,9 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
     if(a == last)
       break;
     a += PGSIZE;
-      if(pa == 0){
-          cprintf("pa is 0 in mappages and pte is %d\n",pte);
-      }
+//      if(pa == 0){
+//          cprintf("pa is 0 in mappages and pte is %d\n",pte);
+//      }
     pa += PGSIZE;
   }
 
