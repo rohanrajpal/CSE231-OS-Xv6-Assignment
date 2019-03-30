@@ -56,7 +56,9 @@ static void
 bzero_8times(int dev, int bno)
 {
   for (int i = 0; i < 8; ++i) {
-    bzero(dev, bno+i);
+      cprintf("bzero start at %d\n",bno+i);
+      bzero(dev, bno+i);
+      cprintf("bzero completed %d\n",bno+i);
   }
 }
 
@@ -106,12 +108,12 @@ balloc_page(uint dev)
       //give us the bi mod 8 th bit from the right hand side indexed by 0
 //      m = 1 << (bi % 8);
       //bits converted to byte
-      if((bp->data[bi/8]) == 0){  // Is block free?
-        bp->data[bi/8] = (1<<8) - 1;  // Mark block in use.
+      if((bp->data[bi / 8]) == 0){  // Is block free?
+        bp->data[bi / 8] = (1<<8) - 1;  // Mark block in use.
         log_write(bp);
         brelse(bp);
         bzero_8times(dev, b + bi);
-        return b + bi;
+        return (b + bi);
       }
     }
     brelse(bp);

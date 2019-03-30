@@ -18,6 +18,7 @@
 // * B_DIRTY: the buffer data has been modified
 //     and needs to be written to disk.
 
+#include <libzvbi.h>
 #include "types.h"
 #include "defs.h"
 #include "param.h"
@@ -63,34 +64,79 @@ binit(void)
 static struct buf*
 bget(uint dev, uint blockno)
 {
-  struct buf *b;
-
+    struct buf *b;
+//    cprintf("attempting to acquire from bget blk : %d\n", blockno);
   acquire(&bcache.lock);
+    //cprintf("acquired from bget blk : %d ", blockno);
 
+//    if(blockno==694){
+//        cprintf("reached 694 part1\n");
+//    }
   // Is the block already cached?
   for(b = bcache.head.next; b != &bcache.head; b = b->next){
+//      if(blockno==694){
+//          cprintf("reached 694 part1.5 start 1.5if\n");
+//      }
     if(b->dev == dev && b->blockno == blockno){
       b->refcnt++;
+//      if(blockno==694){
+//          cprintf("reached 694 part2\n");
+//      }
       release(&bcache.lock);
+      //cprintf("released from bget blk : %d\n", blockno);
       acquiresleep(&b->lock);
       return b;
     }
   }
+//    if(blockno==694){
+//        cprintf("reached 694 part3\n");
+//    }
 
   // Not cached; recycle an unused buffer.
   // Even if refcnt==0, B_DIRTY indicates a buffer is in use
   // because log.c has modified it but not yet committed it.
+//  volatile struct buf *altb = b;
+//    if(altb);
   for(b = bcache.head.prev; b != &bcache.head; b = b->prev){
+
+//      if(blockno==694){
+//          cprintf("reached 694 part3.5 startif\n");
+//
+//          cprintf("%d %d \n",b->refcnt,b->flags);
+//          cprintf("printed details\n");
+//      }
+
     if(b->refcnt == 0 && (b->flags & B_DIRTY) == 0) {
       b->dev = dev;
       b->blockno = blockno;
       b->flags = 0;
       b->refcnt = 1;
+//        if(blockno==694){
+//            cprintf("reached 694 part4\n");
+//        }
       release(&bcache.lock);
-      acquiresleep(&b->lock);
+//        cprintf("2released from bget blk : %d\n", blockno);
+
+        acquiresleep(&b->lock);
+//        if(blockno==694){
+//            volatile struct buf *balt = &bcache.head;
+//            if (balt != NULL){
+//                cprintf("bcachce details %d \n",balt->blockno);
+//            }
+//            else{
+//                cprintf("danger in bcache\n");
+//            }
+//        }
       return b;
     }
+//      if(blockno==694){
+//          cprintf("reached 694 part3.5 endif\n");
+//      }
   }
+
+//  if(blockno==694){
+//      cprintf("reached 694 part5\n");
+//  }
   panic("bget: no buffers");
 }
 
@@ -103,16 +149,16 @@ write_page_to_disk(uint dev, char *pg, uint blk)
     for(int i = 0; i < 8; i++){
         struct buf* b = bget(dev, blk + i);
 //        struct buf* b_copy = b;
-        if(!holdingsleep(&b->lock))
-        {
-          panic("write page to disk before memmove");
-        }
-        memmove(b->data, pg + i* sizeof(*b), sizeof(*b));
+//        if(!holdingsleep(&b->lock))
+//        {
+//          panic("write page to disk before memmove");
+//        }
+        memmove(b->data, pg + i* BSIZE, BSIZE);
 
-        if(!holdingsleep(&b->lock))
-        {
-          panic("write page to disk after memmove");
-        }
+//        if(!holdingsleep(&b->lock))
+//        {
+//          panic("write page to disk after memmove");
+//        }
 
         bwrite(b);
         brelse(b);
@@ -127,7 +173,7 @@ read_page_from_disk(uint dev, char *pg, uint blk)
 {
     for(int i = 0; i < 8; i++){
         struct buf* b = bread(dev, blk + i);
-        memmove(pg + i* sizeof(*b), b, sizeof(*b));
+        memmove(pg + i* BSIZE, b->data, BSIZE);
 //        bwrite(b);
         brelse(b);
     }
@@ -168,6 +214,8 @@ brelse(struct buf *b)
   releasesleep(&b->lock);
 
   acquire(&bcache.lock);
+  //cprintf("acquired from brelse blk: %d ", b->blockno);
+
   b->refcnt--;
   if (b->refcnt == 0) {
     // no one is waiting for it.
@@ -180,6 +228,7 @@ brelse(struct buf *b)
   }
   
   release(&bcache.lock);
+  //cprintf("released from brelse blk : %d\n", b->blockno);
 }
 //PAGEBREAK!
 // Blank page.

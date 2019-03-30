@@ -26,9 +26,8 @@ acquire(struct spinlock *lk)
 {
   pushcli(); // disable interrupts to avoid deadlock.
   if(holding(lk)){
-//    cprintf(lk->name);
-//      volatile struct spinlock *altlk = lk;
-//      if(holding(altlk)){}
+      volatile struct spinlock *altlk = lk;
+      if (altlk);
     panic("acquire");
   }
 

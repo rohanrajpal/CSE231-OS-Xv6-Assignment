@@ -45,14 +45,23 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
   if(*pde & PTE_P){
     pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
   } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
-      return 0;
+      if(alloc){
+          while((pgtab = (pte_t*)kalloc()) == 0) //potentially infinte loop as no pages can be swapped.
+            swap_page(pgdir);
+      }
+      else {
+          cprintf("in walkpgdir: without alloc");
+          return 0;
+      }
     // Make sure all those PTE_P bits are zero.
     memset(pgtab, 0, PGSIZE);
     // The permissions here are overly generous, but they can
     // be further restricted by the permissions in the page table
     // entries, if necessary.
     *pde = V2P(pgtab) | PTE_P | PTE_W | PTE_U;
+  }
+  if(&pgtab[PTX(va)] == 0){
+      panic("walkpgdir returning zero");
   }
   return &pgtab[PTX(va)];
 }
@@ -319,7 +328,7 @@ select_a_victim(pde_t *pgdir)
             for (int j = 0; j < (1 << 10) ; ++j) {
                 pte = &pgtab[j];
                 if(*pte & PTE_P){
-                    if(!(*pte & PTE_A)){
+                    if( ! (*pte & PTE_A)){
 //                        cprintf("Reached");
                         return pte;
                     }
@@ -330,6 +339,11 @@ select_a_victim(pde_t *pgdir)
     }
 
     clearaccessbit(pgdir);
+
+    /*
+     * TODO: Convert to recursive later
+     *
+     */
 
     for (int i = 0; i < (1 << 10); ++i) {
         pde_t *pde = &pgdir[i];
@@ -343,11 +357,14 @@ select_a_victim(pde_t *pgdir)
                         return pte;
                     }
                 }
-
             }
         }
     }
-    return 0;
+    /*
+     * If it reaches here, means somebody is occupying what
+     * we just freed, means do a recursive call
+     */
+    panic("select a victim should not reach");
 }
 
 // Clear access bit of a random pte.

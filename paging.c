@@ -17,20 +17,31 @@
  * to the disk blocks and save the block-id into the
  * pte.
  */
+//int balloccallcnt=0;
+
 void
 swap_page_from_pte(pte_t *pte)
 {
 //    panic("reached swap_page_from_pte");
+    cprintf("calling balloc page from swap_page_from_pte\n");
 	uint b = balloc_page(1);
-	uint pa = PTE_ADDR(*pte);
+    cprintf("executed balloc page correctly from swap_page_from_pte\n");
+
+    uint pa = PTE_ADDR(*pte);
 	//unsure
-	char* v = P2V(pa);
+	char* v = (char *) P2V(pa);
 //    unsigned v = P2V(pa);
+    cprintf("value of v :%d before write_page_to in swap page ", (int)v);
+
+    cprintf("calling write_page_to_disk page from swap_page_from_pte\n");
 	write_page_to_disk(1,v,b);
-	//what is this
+    cprintf("done write_page_to_disk page from swap_page_from_pte\n");
+
+    //what is this
 	//maximum block size is FSSIZE
 	*pte = (b<<12) | PTE_SWAP;
 //    unsigned long tosend =0;
+    //cprintf("value of v :%d before we asm volatile in swap page ", (int)v);
 	asm volatile("invlpg (%0)":: "r"( (unsigned long) v) : "memory");
 
 	kfree(v);
@@ -61,10 +72,11 @@ void
 map_address(pde_t *pgdir, uint addr)
 {
 //	return;
-    /*
-     * walkpgdir(pg)
-     */
+
     pte_t *pte = walkpgdir(pgdir, (void *) addr, 1);
+    if(pte == 0){
+        panic("pte doesn't exist in map_address");
+    }
     int bid =-1;
     if (*pte & PTE_SWAP){
         bid = getswappedblk(pgdir,addr);
@@ -74,12 +86,16 @@ map_address(pde_t *pgdir, uint addr)
     }
     char* allocmem = kalloc();
 
+    int swapcnt=0;
     while(1){
         if(allocmem) {
             *pte = V2P(allocmem) | PTE_P | PTE_U | PTE_W;
             break;
         }
+        swapcnt++;
+        cprintf("start swap page mapaddress %d\n",swapcnt);
         swap_page(pgdir);
+        cprintf("fin swap page mapaddress %d\n",swapcnt);
         allocmem=kalloc();
     }
     if (bid != -1){
@@ -100,8 +116,10 @@ handle_pgfault()
 {
 	unsigned addr;
 	struct proc *curproc = myproc();
-
 	asm volatile ("movl %%cr2, %0 \n\t" : "=r" (addr));
+	if(addr>=KERNBASE){
+	    panic("handle pgfault");
+	}
 	addr &= ~0xfff;
 	map_address(curproc->pgdir, addr);
 }
