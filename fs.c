@@ -113,7 +113,7 @@ balloc_page(uint dev)
         log_write(bp);
         brelse(bp);
         bzero_8times(dev, b + bi);
-        numallocblocks++;
+        numallocblocks+=8;
         return (b + bi);
       }
     }
@@ -161,7 +161,7 @@ bfree_page(int dev, uint b)
     log_write(bp);
     brelse(bp);
 
-  numallocblocks--;
+  numallocblocks-=8;
 }
 // Inodes.
 //
