@@ -106,18 +106,20 @@ balloc_page(uint dev)
     bp = bread(dev, BBLOCK(b, sb));
     for(bi = 0; bi < BPB && b + bi < sb.size; bi+=8){
       //give us the bi mod 8 th bit from the right hand side indexed by 0
-//      m = 1 << (bi % 8);
+      //m = 1 << (bi % 8);
       //bits converted to byte
       if((bp->data[bi / 8]) == 0){  // Is block free?
         bp->data[bi / 8] = (1<<8) - 1;  // Mark block in use.
         log_write(bp);
         brelse(bp);
         bzero_8times(dev, b + bi);
+        numallocblocks++;
         return (b + bi);
       }
     }
     brelse(bp);
   }
+
   panic("balloc: out of blocks");
 }
 
@@ -145,9 +147,21 @@ bfree(int dev, uint b)
 void
 bfree_page(int dev, uint b)
 {
-  for (int i = 0; i < 8; ++i) {
-    bfree(dev, b+i);
-  }
+
+    struct buf *bp;
+    int bi;
+
+    readsb(dev, &sb);
+    bp = bread(dev, BBLOCK(b, sb));
+    bi = b % BPB;
+//    m = 1 << (bi % 8);
+    if((bp->data[bi/8]) == 0)
+        panic("freeing free block");
+    bp->data[bi/8] = 0;
+    log_write(bp);
+    brelse(bp);
+
+  numallocblocks--;
 }
 // Inodes.
 //

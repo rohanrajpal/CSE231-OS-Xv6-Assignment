@@ -296,7 +296,7 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
         bfree_page(1, bid);
         end_op();
         *pte = 0;
-        numallocblocks--;
+//        numallocblocks--;
     }
     else if((*pte & PTE_P) != 0){
       pa = PTE_ADDR(*pte);

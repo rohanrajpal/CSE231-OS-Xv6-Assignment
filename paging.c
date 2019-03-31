@@ -46,7 +46,7 @@ swap_page_from_pte(pte_t *pte)
 	char* v = (char * ) P2V(pa);
 //    unsigned v = P2V(pa);
 //    cprintf("value of v :%d before write_page_to in swap page \n", (int)v);
-    numallocblocks++;
+//    numallocblocks++;
 //    cprintf("calling write_page_to_disk page from swap_page_from_pte\n");
 	write_page_to_disk(1,v,b);
 //    cprintf("done write_page_to_disk page from swap_page_from_pte\n");
@@ -117,7 +117,7 @@ map_address(pde_t *pgdir, uint addr)
 //        cprintf("bfree called from map_address on bid %d\n", bid);
         begin_op();
         bfree_page(1,bid);
-        numallocblocks--;
+//        numallocblocks--;
         end_op();
     }
     if (walkpgdir(pgdir, ( void *) addr, 0) == 0 ){
