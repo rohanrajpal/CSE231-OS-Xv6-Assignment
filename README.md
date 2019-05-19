@@ -1,52 +1,32 @@
+Assignment was done in a group by
+- Savit Gupta
+- Rohan Rajpal
+- Madhav Sainanee
+
+You can try out the assignment(mentioned below) yourself. Our solution to the assignment is this repository
+
+To view the complete assignment click
+[here](https://drive.google.com/file/d/1Qpd8eORYzfsM6rSfShBYqLMkfwcvAfWT/view?usp=sharing)
+
 # Demand paging in xv6
+The goal of this assignment to understand the paging subsystem of an operating system. The first component you need to implement is demand paging.
+Demand paging lazily maps a physical page corresponding to a virtual page
+during the time of dereferencing. In addition to demand paging, you also need
+to implement swapping. If the system runs out of physical memory, then the
+swapping subsystem reuse an already used physical page by saving its contents
+to secondary storage (e.g., disk).
 
-
-xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
-Version 6 (v6).  xv6 loosely follows the structure and style of v6,
-but is implemented for a modern x86-based multiprocessor using ANSI C.
-
-ACKNOWLEDGMENTS
-
-xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
-to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
-2000)). See also http://pdos.csail.mit.edu/6.828/2016/xv6.html, which
-provides pointers to on-line resources for v6.
-
-xv6 borrows code from the following sources:
-    JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
-    Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
-    FreeBSD (ioapic.c)
-    NetBSD (console.c)
-
-The following people have made contributions: Russ Cox (context switching,
-locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
-Clements.
-
-We are also grateful for the bug reports and patches contributed by Silas
-Boyd-Wickizer, Anton Burtsev, Cody Cutler, Mike CAT, Tej Chajed, Nelson Elhage,
-Saar Ettinger, Alice Ferrazzi, Nathaniel Filardo, Peter Froehlich, Yakir Goaron,
-Shivam Handa, Bryan Henry, Jim Huang, Alexander Kapshuk, Anders Kaseorg,
-kehao95, Wolfgang Keller, Eddie Kohler, Austin Liew, Imbar Marinescu, Yandong
-Mao, Hitoshi Mitake, Carmi Merimovich, Joel Nider, Greg Price, Ayan Shafqat,
-Eldar Sehayek, Yongming Shen, Cam Tenny, Rafael Ubal, Warren Toomey, Stephen Tu,
-Pablo Ventura, Xi Wang, Keiichi Watanabe, Nicolas Wolovick, Grant Wu, Jindong
-Zhang, Icenowy Zheng, and Zou Chang Wei.
-
-The code in the files that constitute xv6 is
-Copyright 2006-2016 Frans Kaashoek, Robert Morris, and Russ Cox.
-
-ERROR REPORTS
-
-Please send errors and suggestions to Frans Kaashoek and Robert Morris
-(kaashoek,rtm@mit.edu). The main purpose of xv6 is as a teaching
-operating system for MIT's 6.828, so we are more interested in
-simplifications and clarifications than new features.
-
-BUILDING AND RUNNING XV6
-
-To build xv6 on an x86 ELF machine (like Linux or FreeBSD), run
-"make". On non-x86 or non-ELF machines (like OS X, even on x86), you
-will need to install a cross-compiler gcc suite capable of producing
-x86 ELF binaries. See http://pdos.csail.mit.edu/6.828/2016/tools.html.
-Then run "make TOOLPREFIX=i386-jos-elf-". Now install the QEMU PC
-simulator and run "make qemu".
+# Environment
+For this assignment, you need to install qemu.  
+Run  
+`sudo apt-get install qemu`  
+Please clone the assignment repo from https://github.com/Systems-IIITD/  
+xv6-paging.git.  
+Run  
+`make qemu`  
+It will boot the xv6 OS in qemu emulator. You can also redirect the output to  
+a file using, make qemu > log.txt.  
+The default process is the shell. Type memtest1 to run memtest1.  
+Currently ( Ours does not :) ), it panics because the page fault handler is not implemented. After,
+you have correctly implemented everything, memtest1 and memtest2 should run
+normally
